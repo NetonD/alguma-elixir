@@ -1,4 +1,4 @@
-defmodule Lexer do
+defmodule Lexer.Parser do
   @moduledoc """
   This module make the patter with a piece of string called pattern
   and return a map that represent the token the which match with
@@ -24,9 +24,33 @@ defmodule Lexer do
   *AP, FP: Open parenthesis, Close parenthesis (abre parenteses, fecha parenteses)
   """
 
-  defp read_file(file_name) do
+  def read_file(file_name) do
     File.stream!(file_name)
-    |> Stream.map(fn line -> IO.inspect(line) end)
+    |> Stream.map(fn line -> read_token(line) end)
     |> Stream.run()
+  end
+
+  defp read_token(line) do
+    line
+    |> String.to_charlist()
+    |> match_token([])
+  end
+
+  def match_token('', token_list) do
+    token_list
+  end
+
+  def match_token(list_char, token_list) do
+    {token, index} =
+      list_char
+      |> Enum.with_index()
+      |> which_is_token?()
+
+    list_char
+    |> Enum.slice(0, index)
+    |> match_token(token_list ++ [token])
+  end
+
+  def which_is_token?(char_list_indexed) do
   end
 end
