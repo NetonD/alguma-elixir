@@ -3,7 +3,7 @@ defmodule Mix.Tasks.TesteLexer do
 
   @shortdoc "Testes do lexer"
 
-  def run() do
+  def run(_args) do
     IO.puts(" Ola ")
   end
 end
