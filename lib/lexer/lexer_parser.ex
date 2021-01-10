@@ -1,5 +1,6 @@
 defmodule Lexer.Parser do
   alias Lexer.Token
+  # TODO: Move next_char/0 and functions that deal with buffer to Lexer.LeitorArquivo
   alias Lexer.LeitorArquivo
   use Agent
 
@@ -60,33 +61,42 @@ defmodule Lexer.Parser do
     symbol
   end
 
+  def reload_buffer1() do
+    Agent.update(Buffer, fn state -> %{state | buffer1: next_char(@buffer_size)} end)
+  end
+
+  def reload_buffer2() do
+    Agent.update(Buffer, fn state -> %{state | buffer2: next_char(@buffer_size)} end)
+  end
+
   def advance_buffer_index() do
     Agent.update(Buffer, fn state ->
-      cond do
-        state[:index] < @buffer_size - 1 ->
-          %{state | index: state[:index] + 1}
-
-        state[:index] < @buffer_size * 2 - 1 and state[:buffer2] == "" ->
-          %{state | buffer2: next_char(@buffer_size), index: state[:index] + 1}
-
-        state[:index] < @buffer_size ->
-          %{state | index: state[:index] + 1, buffer2: next_char(@buffer_size)}
-
-        state[:index] < @buffer_size * 2 - 1 ->
-          %{state | index: state[:index] + 1}
-
-        true ->
-          %{state | index: 0, buffer1: next_char(@buffer_size)}
-      end
+      %{state | index: state[:index] + 1}
     end)
+
+    index = Agent.get(Buffer, fn state -> state[:index] end)
+
+    cond do
+      index == @buffer_size ->
+        reload_buffer2()
+
+      index == @buffer_size * 2 ->
+        reload_buffer1()
+        Agent.update(Buffer, fn state -> %{state | index: 0} end)
+
+      true ->
+        :do_nothing
+    end
   end
 
   def regress_buffer_index() do
     Agent.update(Buffer, fn state ->
-      if state[:index] > 0 do
-        %{state | index: state[:index] - 1}
+      new_index = state[:index] - 1
+
+      if new_index >= 0 do
+        %{state | index: new_index}
       else
-        state
+        %{state | index: @buffer_size - 1}
       end
     end)
   end
@@ -123,12 +133,18 @@ defmodule Lexer.Parser do
         end
 
       "<" ->
-        look_ahead = next_char()
+        peek_ahead = read_from_buffer()
 
         cond do
-          look_ahead == ">" -> Token.new(:OpRelDif, "<>")
-          look_ahead == "=" -> Token.new(:OpRelMenorIgual, "<=")
-          true -> Token.new(:OpRelMenor, "<")
+          peek_ahead == ">" ->
+            Token.new(:OpRelDif, "<>")
+
+          peek_ahead == "=" ->
+            Token.new(:OpRelMenorIgual, "<=")
+
+          true ->
+            regress_buffer_index()
+            Token.new(:OpRelMenor, "<")
         end
 
       "=" ->
