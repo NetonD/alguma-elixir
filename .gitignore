@@ -20,8 +20,5 @@ erl_crash.dump
 *.ez
 
 # Ignore package tarball (built via "mix hex.build").
-alguma-*.tar
-
-
-# Temporary files for e.g. tests
-/tmp
+alguma_elixir-*.tar
+*.c
