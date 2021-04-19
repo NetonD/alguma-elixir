@@ -1,0 +1,7 @@
+vscode:
+  extensions:
+    - elixir-lsp.elixir-ls@0.7.0:2ca97f93244ccc3fe21b9d321ca4e0b9
+tasks:
+  - before: sudo apt install elixir
+    init: mix compile
+    command: mix test
